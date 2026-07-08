@@ -11,6 +11,31 @@ CATEGORY_STYLES = {
     "개인": ("#e6f7ec", "#15803d"),
     "공부": ("#f3e8ff", "#7e22ce"),
 }
+AUTO_OPTION = "자동분류"
+DEFAULT_CATEGORY = "개인"
+CATEGORY_KEYWORDS = {
+    "업무": [
+        "회의", "미팅", "보고서", "업무", "프로젝트", "발표", "이메일", "메일",
+        "클라이언트", "계약", "출근", "퇴근", "회사", "리포트", "야근", "결재",
+        "기획", "고객", "영업", "제출", "회식",
+    ],
+    "공부": [
+        "공부", "시험", "과제", "강의", "수업", "독서", "학교", "자격증",
+        "논문", "숙제", "복습", "예습", "토익", "영어", "수학", "책",
+    ],
+    "개인": [
+        "쇼핑", "청소", "빨래", "운동", "병원", "약속", "가족", "친구",
+        "여행", "취미", "장보기", "요리", "은행", "약국", "미용실", "산책",
+        "밥", "식사",
+    ],
+}
+
+
+def classify_category(title):
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        if any(keyword in title for keyword in keywords):
+            return category
+    return None
 
 st.set_page_config(page_title="심플투두", page_icon="📝", layout="centered")
 
@@ -100,11 +125,16 @@ with st.form("add_form", clear_on_submit=True):
         "할일", placeholder="할일을 입력하세요", label_visibility="collapsed"
     )
     category_input = col_category.selectbox(
-        "카테고리", CATEGORIES, index=1, label_visibility="collapsed"
+        "카테고리", [AUTO_OPTION] + CATEGORIES, index=0, label_visibility="collapsed"
     )
     submitted = col_submit.form_submit_button("추가", use_container_width=True)
-    if submitted:
-        add_todo(title_input, category_input)
+    if submitted and title_input.strip():
+        if category_input == AUTO_OPTION:
+            resolved_category = classify_category(title_input) or DEFAULT_CATEGORY
+            st.toast(f"'{resolved_category}' 카테고리로 자동 분류되었습니다.")
+        else:
+            resolved_category = category_input
+        add_todo(title_input, resolved_category)
 
 st.session_state.filter = st.radio(
     "필터",
